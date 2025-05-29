@@ -42,36 +42,6 @@ jobs:
         # 写入Google Services配置
         echo '${{ secrets.GOOGLE_SERVICES_JSON }}' | base64 -d > app/google-services.json
 
-# 尝试使用管道和 base64 -d
-      env:
-        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
-    - name: Debug generated files content # !!! 新增的调试步骤 !!!
-      run: |
-        echo "--- Listing files in root directory ---"
-        ls -l
-        echo "--- Listing files in app directory ---"
-        ls -l app/
-        echo "--- Content of local.properties ---"
-        cat local.properties
-        echo "--- Checking app/app.key size ---"
-        ls -l app/app.key
-        echo "--- Content of app/google-services.json (first 1000 chars) ---"
-        head -c 1000 app/google-services.json
-        echo "--- Content of app/google-services.json (full) ---"
-        cat app/google-services.json
-        echo "--- Checking app/google-services.json size ---"
-        ls -l app/google-services.json
-        echo "--- Checking GOOGLE_SERVICES_JSON Secret length (for debugging) ---"
-        echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | wc -c
-        echo "--- Checking GOOGLE_SERVICES_JSON Secret (first 100 chars, for debugging) ---"
-        echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | head -c 100
-      env: # 确保这些 Secrets 在此步骤中可用
-        GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }} # 只需要这个来检查长度和部分内容
-
     - name: Gradle Build
       run: |
         chmod +x gradlew
