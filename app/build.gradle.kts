@@ -42,15 +42,34 @@ android {
     // ====================================================================
     signingConfigs {
         create("release") {
-            // 使用 project.findProperty() 替代 FileInputStream + Properties
-            // 这种方式更符合 Gradle 惯例，并且能从更多来源（如命令行参数、环境变量）获取属性
-            // 在 GitHub Actions 中，我们会在 local.properties 中写入这些属性
-            // 确保你的 GitHub Secrets (KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD)
-            // 已经正确配置，并且名称与这里读取的属性名一致
-            storeFile = file(project.findProperty("storeFile") as String)
-            storePassword = project.findProperty("storePassword") as String
-            keyAlias = project.findProperty("keyAlias") as String
-            keyPassword = project.findProperty("keyPassword") as String
+            val localProperties = Properties()
+            // 注意：这里使用 rootProject.file("local.properties") 是正确的，
+            // 它会查找项目根目录下的 local.properties
+            val localPropertiesFile = rootProject.file("local.properties")
+            if (localPropertiesFile.exists()) {
+                localProperties.load(FileInputStream(localPropertiesFile))
+                val storeFilePath = localProperties.getProperty("storeFile")
+                val storePasswordValue = localProperties.getProperty("storePassword")
+                val keyAliasValue = localProperties.getProperty("keyAlias")
+                val keyPasswordValue = localProperties.getProperty("keyPassword")
+                if (storeFilePath != null && storePasswordValue != null &&
+                    keyAliasValue != null && keyPasswordValue != null) {
+                    storeFile = file(storeFilePath)
+                    storePassword = storePasswordValue
+                    keyAlias = keyAliasValue
+                    keyPassword = keyPasswordValue
+                } else {
+                    // 添加一个日志，帮助调试：如果属性缺失，打印出来
+                    println("WARNING: Some signing properties are missing in local.properties!")
+                    println("storeFile: $storeFilePath")
+                    println("storePassword: ${storePasswordValue?.let { "SET" } ?: "MISSING"}")
+                    println("keyAlias: $keyAliasValue")
+                    println("keyPassword: ${keyPasswordValue?.let { "SET" } ?: "MISSING"}")
+                }
+            } else {
+                // 添加一个日志，帮助调试：如果文件不存在，打印出来
+                println("WARNING: local.properties file not found at ${localPropertiesFile.absolutePath}")
+            }
         }
     }
     // ====================================================================
