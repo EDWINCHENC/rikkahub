@@ -1,8 +1,8 @@
 // app/build.gradle.kts (最终修改版)
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile // 仍然需要这个 import
-// import java.io.FileInputStream // 不再需要，可以删除
-// import java.util.Properties    // 不再需要，可以删除
+import java.io.FileInputStream 
+import java.util.Properties    
 
 plugins {
     alias(libs.plugins.android.application)
