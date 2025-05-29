@@ -1,11 +1,19 @@
 name: Release Build
 
 on:
-  # 当有新的 Git Tag 被推送到仓库时触发此工作流
-  # 例如：git tag v1.0.0 && git push --tags
-  push:
-    tags:
-      - 'v*' # 匹配所有以 'v' 开头的标签，例如 v1.0.0, v1.2.3, v-beta 等
+  # 只允许手动从 GitHub Actions UI 触发工作流
+  workflow_dispatch:
+    inputs:
+      # 手动输入 APK 的版本名称 (例如: 1.0.0, 1.0.1-beta)
+      version_name:
+        description: '1.0.0-c'
+        required: true # 必须填写
+        default: '1.0.0' # 提供一个默认值，方便你第一次使用或测试
+      # 手动输入 APK 的版本代码 (例如: 1, 2, 3 - 必须是递增的整数)
+      version_code:
+        description: '1'
+        required: true # 必须填写
+        default: '1' # 提供一个默认值
 
 jobs:
   build:
@@ -14,7 +22,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 0 # 获取完整的历史记录，以便后续创建 Release 时获取 Tag 信息
+        fetch-depth: 0 # 获取完整的历史记录
 
     - name: Set up JDK
       uses: actions/setup-java@v4
@@ -30,7 +38,24 @@ jobs:
           ~/.gradle/wrapper
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }} 
 
-    - name: Prepare build files # 准备构建所需的文件
+    - name: Inject Manual Version Info # 【新增】步骤：注入手动输入的版本信息到 gradle.properties
+      run: |
+        # 获取手动输入的版本号
+        VERSION_NAME="${{ github.event.inputs.version_name }}"
+        VERSION_CODE="${{ github.event.inputs.version_code }}"
+
+        echo "Injecting VERSION_CODE=$VERSION_CODE and VERSION_NAME=$VERSION_NAME into gradle.properties"
+        
+        # 更新 gradle.properties 文件
+        # 使用 sed 命令替换或添加 VERSION_CODE 和 VERSION_NAME
+        # 如果文件不存在这些行，则添加
+        sed -i "/^VERSION_CODE=/c\VERSION_CODE=$VERSION_CODE" gradle.properties || echo "VERSION_CODE=$VERSION_CODE" >> gradle.properties
+        sed -i "/^VERSION_NAME=/c\VERSION_NAME=$VERSION_NAME" gradle.properties || echo "VERSION_NAME=$VERSION_NAME" >> gradle.properties
+        
+        echo "Updated gradle.properties content:"
+        cat gradle.properties # 打印更新后的内容，方便调试
+
+    - name: Prepare build files # 准备构建所需的文件 (保持不变)
       run: |
         # 解码base64编码的keystore文件
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/app.key
@@ -62,16 +87,18 @@ jobs:
         name: release-apk # 更改 Artifact 的名称，使其更明确
         path: app/build/outputs/apk/release/*.apk
 
-    - name: Create GitHub Release # 新增步骤：创建 GitHub Release 并上传 APK
+    - name: Create GitHub Release # 创建 GitHub Release 并上传 APK
       id: create_release
       uses: softprops/action-gh-release@v1
       if: success() # 只有当上一步成功时才执行
       with:
         files: app/build/outputs/apk/release/*.apk # 指定要上传到 Release 的文件
-        name: Release ${{ github.ref_name }} # Release 的名称，例如 "Release v1.0.0"
-        tag_name: ${{ github.ref }} # 使用当前的 Git Tag 作为 Release 的标签
+        # Release 的名称和 Tag 都使用手动输入的 versionName
+        # 建议 Tag 加上 'v' 前缀，这是惯例，方便管理
+        tag_name: v${{ github.event.inputs.version_name }} 
+        name: Release ${{ github.event.inputs.version_name }}
         body: | # Release 的说明文本
-          Automated release for version **${{ github.ref_name }}**.
+          Manual release for version **${{ github.event.inputs.version_name }}** (Code: ${{ github.event.inputs.version_code }}).
           
           This release includes the latest features and bug fixes.
           
@@ -86,4 +113,3 @@ jobs:
         # GITHUB_TOKEN 是 GitHub Actions 自动提供的，用于认证
         # 拥有对仓库的写入权限，足以创建 Release
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
