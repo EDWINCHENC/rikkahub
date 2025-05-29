@@ -1,6 +1,8 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.io.FileInputStream
-import java.util.Properties
+// app/build.gradle.kts (最终修改版)
+
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile // 仍然需要这个 import
+// import java.io.FileInputStream // 不再需要，可以删除
+// import java.util.Properties    // 不再需要，可以删除
 
 plugins {
     alias(libs.plugins.android.application)
@@ -14,14 +16,14 @@ plugins {
 
 android {
     namespace = "me.rerere.rikkahub"
-    compileSdk = 36
+    compileSdk = 36 // 保持你的原始版本
 
     defaultConfig {
         applicationId = "me.rerere.rikkahub"
         minSdk = 26
         targetSdk = 36
-        versionCode = 45
-        versionName = "0.7.19"
+        versionCode = 45 // 保持你的原始版本
+        versionName = "0.7.19" // 保持你的原始版本
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -35,61 +37,57 @@ android {
         }
     }
 
+    // ====================================================================
+    // !!! 核心修改部分：简化签名配置的属性读取方式 !!!
+    // ====================================================================
     signingConfigs {
         create("release") {
-            val localProperties = Properties()
-            val localPropertiesFile = rootProject.file("local.properties")
-            
-            if (localPropertiesFile.exists()) {
-                localProperties.load(FileInputStream(localPropertiesFile))
-                
-                val storeFilePath = localProperties.getProperty("storeFile")
-                val storePasswordValue = localProperties.getProperty("storePassword")
-                val keyAliasValue = localProperties.getProperty("keyAlias")
-                val keyPasswordValue = localProperties.getProperty("keyPassword")
-                
-                if (storeFilePath != null && storePasswordValue != null && 
-                    keyAliasValue != null && keyPasswordValue != null) {
-                    storeFile = file(storeFilePath)
-                    storePassword = storePasswordValue
-                    keyAlias = keyAliasValue
-                    keyPassword = keyPasswordValue
-                }
-            }
+            // 使用 project.findProperty() 替代 FileInputStream + Properties
+            // 这种方式更符合 Gradle 惯例，并且能从更多来源（如命令行参数、环境变量）获取属性
+            // 在 GitHub Actions 中，我们会在 local.properties 中写入这些属性
+            // 确保你的 GitHub Secrets (KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD)
+            // 已经正确配置，并且名称与这里读取的属性名一致
+            storeFile = file(project.findProperty("storeFile") as String)
+            storePassword = project.findProperty("storePassword") as String
+            keyAlias = project.findProperty("keyAlias") as String
+            keyPassword = project.findProperty("keyPassword") as String
         }
     }
+    // ====================================================================
+    // !!! 核心修改部分结束 !!!
+    // ====================================================================
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("release") // 这行你原始文件就有，保持不变
             isMinifyEnabled = true
-            isShrinkResources = true
+            isShrinkResources = true // 保持你的原始配置
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "VERSION_NAME", "\"${android.defaultConfig.versionName}\"")
-            buildConfigField("String", "VERSION_CODE", "\"${android.defaultConfig.versionCode}\"")
+            buildConfigField("String", "VERSION_NAME", "\"${android.defaultConfig.versionName}\"") // 保持你的原始配置
+            buildConfigField("String", "VERSION_CODE", "\"${android.defaultConfig.versionCode}\"") // 保持你的原始配置
         }
         debug {
-            applicationIdSuffix = ".debug"
-            buildConfigField("String", "VERSION_NAME", "\"${android.defaultConfig.versionName}\"")
-            buildConfigField("String", "VERSION_CODE", "\"${android.defaultConfig.versionCode}\"")
+            applicationIdSuffix = ".debug" // 保持你的原始配置
+            buildConfigField("String", "VERSION_NAME", "\"${android.defaultConfig.versionName}\"") // 保持你的原始配置
+            buildConfigField("String", "VERSION_CODE", "\"${android.defaultConfig.versionCode}\"") // 保持你的原始配置
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_11 // 保持你的原始版本
+        targetCompatibility = JavaVersion.VERSION_11 // 保持你的原始版本
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "11" // 保持你的原始版本
     }
     buildFeatures {
         compose = true
-        buildConfig = true
+        buildConfig = true // 保持你的原始配置
     }
     androidResources {
-        generateLocaleConfig = true
+        generateLocaleConfig = true // 保持你的原始配置
     }
     applicationVariants.all {
         outputs.all {
@@ -98,7 +96,7 @@ android {
             val variantName = name
             val apkName = "rikkahub_" + defaultConfig.versionName  + "_" + variantName + ".apk"
 
-            outputFileName = apkName
+            outputFileName = apkName // 保持你的原始配置
         }
     }
     tasks.withType<KotlinCompile>().configureEach {
@@ -110,12 +108,12 @@ android {
         compilerOptions.optIn.add("androidx.compose.foundation.layout.ExperimentalLayoutApi")
         compilerOptions.optIn.add("kotlin.uuid.ExperimentalUuidApi")
         compilerOptions.optIn.add("kotlin.time.ExperimentalTime")
-        compilerOptions.optIn.add("kotlinx.coroutines.ExperimentalCoroutinesApi")
+        compilerOptions.optIn.add("kotlinx.coroutines.ExperimentalCoroutinesApi") // 保持你的原始配置
     }
 }
 
 ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
+    arg("room.schemaLocation", "$projectDir/schemas") // 保持你的原始配置
 }
 
 dependencies {
