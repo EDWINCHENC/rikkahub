@@ -6,12 +6,12 @@ on:
     inputs:
       # 手动输入 APK 的版本名称 (例如: 1.0.0, 1.0.1-beta)
       version_name:
-        description: '1.0.0-c'
+        description: 'APK Version Name (e.g., 1.0.0, 1.0.1-beta)'
         required: true # 必须填写
         default: '1.0.0' # 提供一个默认值，方便你第一次使用或测试
       # 手动输入 APK 的版本代码 (例如: 1, 2, 3 - 必须是递增的整数)
       version_code:
-        description: '1'
+        description: 'APK Version Code (e.g., 1, 2, 3 - must be an integer)'
         required: true # 必须填写
         default: '1' # 提供一个默认值
 
